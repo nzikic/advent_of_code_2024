@@ -13,3 +13,4 @@ add_library(advent_2024_warnings INTERFACE)
 advent2024_setup_project_warnings(advent_2024_warnings)
 
 add_subdirectory(day01)
+add_subdirectory(day02)
