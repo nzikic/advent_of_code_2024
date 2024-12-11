@@ -17,7 +17,7 @@ bool is_sorted(std::ranges::range auto report)
 bool are_adjascent_values_close(std::ranges::range auto report)
 {
     auto abs_diff = [] (auto value) { return std::abs(std::get<0>(value) - std::get<1>(value)); };
-    auto between_1_and_3 = [] (auto value) { return value >= 1 && value <=3; };
+    auto between_1_and_3 = [] (auto diff) { return diff >= 1 && diff <=3; };
 
     auto differences = report | std::views::adjacent<2> | std::views::transform(abs_diff);
 
@@ -27,6 +27,22 @@ bool are_adjascent_values_close(std::ranges::range auto report)
 bool report_is_safe(std::ranges::range auto report)
 {
     return is_sorted(report) && are_adjascent_values_close(report);
+}
+
+auto report_is_safe_with_tolerance(std::ranges::range auto report)
+{
+    // this is such crap that we cant just join two ranges simply
+    for(int i : std::views::iota(0, static_cast<int>(report.size()))) {
+        std::span before_i = report | std::views::take(i);
+        std::span after_i = report | std::views::drop(i+1);
+
+        std::vector<std::span<int>> combined { before_i, after_i };
+        if (report_is_safe(std::ranges::join_view(combined))) {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 int main()
@@ -52,8 +68,11 @@ int main()
         reports.push_back(report);
     }
     
+    auto safe_reports = std::ranges::count_if(reports, [&](auto report) { return report_is_safe(report); });
+    std::cout << std::format("Number of safe reports: {}\n", safe_reports);
 
-    std::cout << std::format("Number of safe reports: {}\n", std::ranges::count_if(reports, [&](auto report) { return report_is_safe(report); }));
+    auto safe_report_with_tolerance = std::ranges::count_if(reports, [&](auto report) { return report_is_safe_with_tolerance(report); });
+    std::cout << std::format("Number of safe reports with tolerance: {}\n", safe_report_with_tolerance);
 
     return 0;
 }
